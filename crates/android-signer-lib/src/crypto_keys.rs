@@ -56,20 +56,26 @@ impl Keys {
     }
 
     pub fn from_p12(p12_bytes: &[u8], password: &str) -> Result<Keys> {
-        let pfx = p12::PFX::parse(p12_bytes).map_err(|_| PackError::SignerNoKeys)?;
+        let pfx = p12::PFX::parse(p12_bytes).map_err(|e| {
+            PackError::SignerP12ParsingFailed(format!("Invalid PFX format: {:?}", e))
+        })?;
 
-        let keys = pfx
-            .key_bags(password)
-            .map_err(|_| PackError::SignerNoKeys)?;
+        let keys = pfx.key_bags(password).map_err(|e| {
+            PackError::SignerP12ParsingFailed(format!("Failed to enumerate private keys: {:?}", e))
+        })?;
         if keys.is_empty() {
-            return Err(PackError::SignerNoKeys);
+            return Err(PackError::SignerP12ParsingFailed(
+                "No private keys found in the keystore".to_string(),
+            ));
         }
 
-        let certs = pfx
-            .cert_x509_bags(password)
-            .map_err(|_| PackError::SignerNoKeys)?;
+        let certs = pfx.cert_x509_bags(password).map_err(|e| {
+            PackError::SignerP12ParsingFailed(format!("Failed to enumerate certificates: {:?}", e))
+        })?;
         if certs.is_empty() {
-            return Err(PackError::SignerNoKeys);
+            return Err(PackError::SignerP12ParsingFailed(
+                "No certificates found in the keystore".to_string(),
+            ));
         }
 
         let private_key = RsaPrivateKey::from_pkcs8_der(&keys[0])?;

@@ -97,7 +97,9 @@ pub enum PackError {
     /// The signing certificate couldn't be loaded for V1 AAB signing.
     SignerCertificateDecodingFailed(Rc<rasn::error::DecodeError>),
     /// V1 Signing data couldn't be serialised
-    SignerPKCS7EncodingFailed(Rc<rasn::error::EncodeError>)
+    SignerPKCS7EncodingFailed(Rc<rasn::error::EncodeError>),
+    /// An error occurred while parsing a .p12 keystore file
+    SignerP12ParsingFailed(String),
 }
 
 /// Result type where the error is always [PackError].
@@ -130,6 +132,7 @@ impl fmt::Display for PackError {
             SignerRsaKeySerialisationFailed(pkcs_error) => write!(f, "Failed to serialise RSA key for APK Signing Scheme v1.\nInternal error: {pkcs_error:?}"),
             SignerCertificateDecodingFailed(decode_error) => write!(f, "Failed to decode certificate from .pem.\nInternal error: {decode_error:?}"),
             SignerPKCS7EncodingFailed(encode_error) => write!(f, "Failed to write PKCS7 signature for APK Signature Scheme v1.\nInternal error: {encode_error:?}"),
+            SignerP12ParsingFailed(e) => write!(f, "Failed to parse .p12 keystore: {}", e),
         }
     }
 }
