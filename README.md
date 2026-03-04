@@ -10,7 +10,7 @@ This repository is a refactored and modernized fork of `google/pack`, decomposed
 
 You can download pre-compiled binaries from the [Releases](https://github.com/TODO/releases) page for Windows, macOS, and Linux.
 
-The CLI takes an input archive, a keystore file (`.p12` or `.pem`), and the keystore password, then outputs a signed archive containing the v2/v3 signatures.
+The CLI takes an input archive, a keystore file (`.p12` or `.pem`), and the keystore password, then outputs a signed archive containing the appropriate signatures (v1 for `.aab`, v2/v3 for `.apk`).
 
 ```bash
 android-signer-cli --input app-release-unsigned.aab \
@@ -41,7 +41,7 @@ android-signer-lib = "0.1"
 Then you can use it in your code as follows:
 
 ```rust
-use android_signer_lib::{crypto_keys::Keys, sign_apk_buffer};
+use android_signer_lib::{crypto_keys::Keys, sign_apk_buffer, sign_aab_buffer};
 use std::fs;
 
 fn sign_my_app() -> Result<(), Box<dyn std::error::Error>> {
@@ -51,12 +51,15 @@ fn sign_my_app() -> Result<(), Box<dyn std::error::Error>> {
 
     // 2. Read App Buffer
     let mut apk_buf = fs::read("unsigned.apk")?;
+    let aab_buf = fs::read("unsigned.aab")?;
 
-    // 3. Sign Archive
-    let signed_buf = sign_apk_buffer(&mut apk_buf, &keys)?;
+    // 3. Sign Archive (APK uses v2/v3, AAB uses v1)
+    let signed_apk = sign_apk_buffer(&mut apk_buf, &keys)?;
+    let signed_aab = sign_aab_buffer(&aab_buf, &keys)?;
     
     // 4. Save
-    fs::write("signed.apk", signed_buf)?;
+    fs::write("signed.apk", signed_apk)?;
+    fs::write("signed.aab", signed_aab)?;
     Ok(())
 }
 ```
