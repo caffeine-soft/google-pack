@@ -1,16 +1,12 @@
 [workspace]
-resolver = "2"
 members = [
-    "pack-aab",
-    "pack-api",
-    "pack-common",
-    "pack-cli",
-    "pack-common",
-    "pack-sign",
-    "pack-wasm",
-    "pack-zip",
+    "crates/android-signer-lib",
+    "crates/android-signer-cli"
 ]
+resolver = "2"
 
-# Web package is built to be small
-[profile.release.package.pack-wasm]
+[profile.release]
 opt-level = "z"
+lto = true
+strip = true
+panic = "abort"

@@ -1,0 +1,9 @@
+[package]
+name = "android-signer-cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+android-signer-lib = { path = "../android-signer-lib" }
+clap = { version = "4.0", features = ["derive"] }
+anyhow = "1.0"

@@ -1,7 +1,0 @@
-[package]
-name = "pack-cli"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-pack-api = { path = "../pack-api", features = ["cert-gen"] }
