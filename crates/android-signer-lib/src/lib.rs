@@ -32,10 +32,12 @@ pub mod zip;
 mod zip_parser;
 mod zip_rebuilder;
 
+use std::io::{Cursor, Read};
+
 // APK Signature Scheme v2 based on https://source.android.com/docs/security/features/apksigning/v2
 // APK Signature Scheme v3 based on https://source.android.com/docs/security/features/apksigning/v3
 /// Signs a ZIP file buffer, adding an APK Signature Block before its Central Directory.
-/// Can be used for both APK and AAB files.
+/// Can be used for APK files.
 pub fn sign_apk_buffer(apk_buf: &mut [u8], keys: &Keys) -> Result<Vec<u8>> {
     // Dry-run the block to figure out how long it will be given our key
     let dry_run = compute_signing_block([0; 32], keys)?;
@@ -48,4 +50,43 @@ pub fn sign_apk_buffer(apk_buf: &mut [u8], keys: &Keys) -> Result<Vec<u8>> {
     let signing_block = compute_signing_block(top_level_hash, keys)?;
     // Build up the final zip file again
     rebuild_zip_with_signing_block(&offsets, apk_buf, signing_block)
+}
+
+/// Signs an Android App Bundle (.aab) format file in memory using v1 (JAR) signing.
+pub fn sign_aab_buffer(aab_buf: &[u8], keys: &Keys) -> Result<Vec<u8>> {
+    let cursor = Cursor::new(aab_buf);
+    let mut archive = ::zip::ZipArchive::new(cursor)?;
+
+    let mut files = Vec::new();
+    for i in 0..archive.len() {
+        let mut file = archive.by_index(i)?;
+        let path = file.name().to_string();
+
+        // Skip existing signature files to allow resigning
+        if path.starts_with("META-INF/")
+            && (path.ends_with(".SF")
+                || path.ends_with(".RSA")
+                || path.ends_with(".DSA")
+                || path.ends_with("MANIFEST.MF"))
+        {
+            continue;
+        }
+
+        // Directories shouldn't be read as files
+        if file.is_dir() {
+            continue;
+        }
+
+        let mut data = Vec::new();
+        file.read_to_end(&mut data)?;
+
+        files.push(crate::zip::File { path, data });
+    }
+
+    crate::v1_signing::add_v1_signature_files(&mut files, keys)?;
+
+    let mut out_cursor = Cursor::new(Vec::new());
+    crate::zip::zip_apk(&files, &mut out_cursor)?;
+
+    Ok(out_cursor.into_inner())
 }

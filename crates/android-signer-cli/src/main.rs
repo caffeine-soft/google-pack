@@ -1,4 +1,4 @@
-use android_signer_lib::{crypto_keys::Keys, sign_apk_buffer};
+use android_signer_lib::{crypto_keys::Keys, sign_aab_buffer, sign_apk_buffer};
 use anyhow::{Context, Result};
 use clap::Parser;
 use std::fs;
@@ -50,9 +50,19 @@ fn main() -> Result<()> {
     let mut apk_buf = fs::read(&args.input)
         .with_context(|| format!("Failed to read input file at {:?}", args.input))?;
 
+    let is_aab = args
+        .input
+        .extension()
+        .map_or(false, |ext| ext.eq_ignore_ascii_case("aab"));
+
     // Sign the buffer
-    let signed_buf = sign_apk_buffer(&mut apk_buf, &keys)
-        .map_err(|e| anyhow::anyhow!("Failed to sign archive: {}", e))?;
+    let signed_buf = if is_aab {
+        sign_aab_buffer(&apk_buf, &keys)
+            .map_err(|e| anyhow::anyhow!("Failed to sign AAB archive: {}", e))?
+    } else {
+        sign_apk_buffer(&mut apk_buf, &keys)
+            .map_err(|e| anyhow::anyhow!("Failed to sign APK archive: {}", e))?
+    };
 
     // Write to output
     fs::write(&args.output, signed_buf)
