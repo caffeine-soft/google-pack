@@ -34,11 +34,17 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
-      - name: Install musl-tools
-        if: matrix.target == 'x86_64-unknown-linux-musl'
-        run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - name: Install cross
+        if: runner.os == 'Linux'
+        run: |
+          curl -L https://github.com/cross-rs/cross/releases/download/v0.2.5/cross-x86_64-unknown-linux-musl.tar.gz | tar xz -C ~/.cargo/bin
 
-      - name: Build CLI
+      - name: Build CLI (Linux)
+        if: runner.os == 'Linux'
+        run: cross build --release --target ${{ matrix.target }} --package android-signer-cli
+
+      - name: Build CLI (macOS/Windows)
+        if: runner.os != 'Linux'
         run: cargo build --release --target ${{ matrix.target }} --package android-signer-cli
 
       - name: Prepare binary
