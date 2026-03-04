@@ -56,7 +56,7 @@ jobs:
 
       - name: Archive binary
         uses: actions/upload-artifact@v6
-        with:q
+        with:
           name: binary-${{ matrix.target }}
           path: android-signer-cli-${{ matrix.target }}${{ matrix.suffix }}
 
