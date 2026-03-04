@@ -10,7 +10,7 @@ This repository is a refactored and modernized fork of `google/pack`, decomposed
 
 You can download pre-compiled binaries from the [Releases](https://github.com/TODO/releases) page for Windows, macOS, and Linux.
 
-The CLI takes an input archive, a `.p12` keystore file, and the keystore password, then outputs a signed archive containing the v2/v3 signatures.
+The CLI takes an input archive, a keystore file (`.p12` or `.pem`), and the keystore password, then outputs a signed archive containing the v2/v3 signatures.
 
 ```bash
 android-signer-cli --input app-release-unsigned.aab \
